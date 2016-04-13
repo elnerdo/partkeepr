@@ -1,0 +1,33 @@
+version: '2'
+
+services:
+  nginx:
+    build: nginx
+    ports:
+      - "80:80"
+    volumes_from:
+      - partkeepr
+
+  partkeepr:
+    build: partkeepr
+    depends_on:
+      - mysql
+
+  mysql:
+    image: mysql:5.6
+    environment:
+      - MYSQL_ROOT_PASSWORD=foobar
+      - MYSQL_DATABASE=partkeepr
+      - MYSQL_USER=partkeepr
+      - MYSQL_PASSWORD=partkeepr
+    volumes:
+      - mysqldata:/var/lib/mysql
+
+  cron:
+    build: cron
+    volumes_from:
+      - partkeepr
+      - mysql
+
+volumes:
+  mysqldata:
