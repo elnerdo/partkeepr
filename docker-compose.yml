@@ -15,16 +15,13 @@ services:
 
   mysql:
     image: mysql:5.6
-    environment:
-      - MYSQL_ROOT_PASSWORD=foobar
-      - MYSQL_DATABASE=partkeepr
-      - MYSQL_USER=partkeepr
-      - MYSQL_PASSWORD=partkeepr
+    env_file: .env
     volumes:
       - mysqldata:/var/lib/mysql
 
   cron:
     build: cron
+    env_file: .env
     volumes_from:
       - partkeepr
       - mysql
