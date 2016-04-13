@@ -4,15 +4,6 @@ RUN apk add --update php python py-pip mysql-client \
     && pip install awscli \
     && rm -rf /var/cache/apk/*
 
-ENV AWS_ACCESS_KEY_ID ** Set Me ** 
-ENV AWS_SECRET_ACCESS_KEY ** Set Me **
-ENV AWS_DEFAULT_REGION eu-central-1
-ENV MYSQL_HOST ** Set Me **
-ENV MYSQL_USER ** Set Me **
-ENV MYSQL_PASSWORD ** Set Me **
-ENV S3_BUCKET ** Set Me **
-ENV S3_PATH ** Set Me **
-
 RUN mkdir -p /var/www/backup
 ADD start.sh /var/www/backup
 RUN chmod 775 /var/www/backup/start.sh
