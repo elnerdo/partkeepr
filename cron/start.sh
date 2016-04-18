@@ -1,5 +1,6 @@
 #!/bin/bash
 
+DATE=$(date + "-%Y-%m-%d_%H-%M-%S")
 EXCLUDE_OPT=
 PASS_OPT=
 
@@ -33,21 +34,22 @@ if [ "$1" == "backup" ]; then
     for db in $databases; do
         echo "dumping $db"
 
-        mysqldump --force --opt --host=$MYSQL_HOST --port=$MYSQL_PORT --user=$MYSQL_USER --databases $db ${PASS_OPT} | gzip > "/tmp/$db$(date +"%Y-%m-%d_%H-%M-%S").gz"
+        mysqldump --force --opt --host=$MYSQL_HOST --port=$MYSQL_PORT --user=$MYSQL_USER --databases $db ${PASS_OPT} | gzip > "/tmp/$db$DATE.gz"
 
         if [ $? == 0 ]; then
-            aws s3 cp /tmp/$db$(date +"%Y-%m-%d_%H-%M-%S").gz s3://$S3_BUCKET/$S3_PATH/$db$(date +"%Y-%m-%d_%H-%M-%S").gz
+            aws s3 cp /tmp/$db$DATE.gz s3://$S3_BUCKET/$S3_PATH/$db$DATE.gz
 
             if [ $? == 0 ]; then
                 >&2 echo "Success"
                 #rm /tmp/$db$(date +"%Y-%m-%d_%H-%M-%S").gz
             else
-                >&2 echo "couldn't transfer $db$(date +"%Y-%m-%d_%H-%M-%S").gz to S3"
+                >&2 echo "couldn't transfer $db$DATE.gz to S3"
             fi
         else
             >&2 echo "couldn't dump $db"
         fi
     done
+# not tested
 elif [ "$1" == "restore" ]; then
     if [ -n "$2" ]; then
         archives=$2.gz
