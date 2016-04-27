@@ -9,8 +9,8 @@ ADD start.sh /var/www/backup
 RUN chmod 775 /var/www/backup/start.sh
 
 RUN touch crontab.tmp \
-    && echo '* */6 * * * /usr/bin/php /var/www/partkeepr/app/console partkeepr:cron:run' > crontab.tmp \
-    && echo '* 1 * * * sh /var/www/backup/start.sh backup partkeepr' >> crontab.tmp \
+    && echo '0 */6 * * * /usr/bin/php /var/www/partkeepr/app/console partkeepr:cron:run' > crontab.tmp \
+    && echo '0 1 * * * sh /var/www/backup/start.sh backup partkeepr' >> crontab.tmp \
     && crontab crontab.tmp \
     && rm -rf crontab.tmp
 
