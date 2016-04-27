@@ -7,6 +7,8 @@ services:
       - "80:80"
     volumes_from:
       - partkeepr
+    depends_on:
+      - partkeepr
 
   partkeepr:
     build: partkeepr
@@ -15,9 +17,15 @@ services:
 
   mysql:
     image: mysql:5.6
-    env_file: .env
+    environment:
+        - MYSQL_ROOT_PASSWORD=foobar
+        - MYSQL_DATABASE=partkeepr
+        - MYSQL_USER=partkeepr
+        - MYSQL_PASSWORD=partkeepr
     volumes:
       - mysqldata:/var/lib/mysql
+    mem_limit: 1000000000
+    memswap_limit: 2000000000
 
   cron:
     build: cron
