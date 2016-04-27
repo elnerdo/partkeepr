@@ -33,3 +33,5 @@ RUN cd /var/www \
 
 VOLUME /var/www/partkeepr
 WORKDIR /var/www/partkeepr
+
+ADD config.php /var/www/partkeepr
