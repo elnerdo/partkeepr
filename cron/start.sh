@@ -1,6 +1,6 @@
 #!/bin/bash
 
-DATE=$(date + "-%Y-%m-%d_%H-%M-%S")
+DATE=$(date +"_%Y-%m-%d_%H-%M-%S")
 EXCLUDE_OPT=
 PASS_OPT=
 
@@ -67,17 +67,18 @@ elif [ "$1" == "restore" ]; then
 
         if [ $? == 0 ]; then
             echo "...restoring"
-            db=`basename --suffix=.gz $archive`
+            # hardcoded - use something like split?
+            db="partkeepr"
 
             if [ -n $MYSQL_PASSWORD ]; then
                 yes | mysqladmin --host=$MYSQL_HOST --port=$MYSQL_PORT --user=$MYSQL_USER --password=$MYSQL_PASSWORD drop $db
 
-                mysql --host=$MYSQL_HOST --port=$MYSQL_PORT --user=$MYSQL_USER --password=$MYSQL_PASSWORD -e "CREATE DATABASE $db CHARACTER SET $RESTORE_DB_CHARSET COLLATE $RESTORE_DB_COLLATION"
+                mysql --host=$MYSQL_HOST --port=$MYSQL_PORT --user=$MYSQL_USER --password=$MYSQL_PASSWORD -e "CREATE DATABASE $db"
                 gunzip -c $tmp | mysql --host=$MYSQL_HOST --port=$MYSQL_PORT --user=$MYSQL_USER --password=$MYSQL_PASSWORD $db
             else
                 yes | mysqladmin --host=$MYSQL_HOST --port=$MYSQL_PORT --user=$MYSQL_USER drop $db
 
-                mysql --host=$MYSQL_HOST --port=$MYSQL_PORT --user=$MYSQL_USER -e "CREATE DATABASE $db CHARACTER SET $RESTORE_DB_CHARSET COLLATE $RESTORE_DB_COLLATION"
+                mysql --host=$MYSQL_HOST --port=$MYSQL_PORT --user=$MYSQL_USER -e "CREATE DATABASE $db"
                 gunzip -c $tmp | mysql --host=$MYSQL_HOST --port=$MYSQL_PORT --user=$MYSQL_USER $db
             fi
         else
