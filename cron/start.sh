@@ -1,6 +1,6 @@
 #!/bin/bash
 
-DATE=$(date +"_%Y-%m-%d_%H-%M-%S")
+DATE=$(date +"%Y-%m-%d_%H-%M-%S")
 EXCLUDE_OPT=
 PASS_OPT=
 
@@ -34,16 +34,15 @@ if [ "$1" == "backup" ]; then
     for db in $databases; do
         echo "dumping $db"
 
-        mysqldump --force --opt --host=$MYSQL_HOST --port=$MYSQL_PORT --user=$MYSQL_USER --databases $db ${PASS_OPT} | gzip > "/tmp/$db$DATE.gz"
+        mysqldump --force --opt --host=$MYSQL_HOST --port=$MYSQL_PORT --user=$MYSQL_USER --databases $db ${PASS_OPT} | gzip > "/tmp/${db}_${DATE}.gz"
 
         if [ $? == 0 ]; then
-            aws s3 cp /tmp/$db$DATE.gz s3://$S3_BUCKET/$S3_PATH/$db$DATE.gz
+            aws s3 cp /tmp/${db}_${DATE}.gz s3://$S3_BUCKET/$S3_PATH/${db}_${DATE}.gz
 
             if [ $? == 0 ]; then
                 >&2 echo "Success"
-                #rm /tmp/$db$(date +"%Y-%m-%d_%H-%M-%S").gz
             else
-                >&2 echo "couldn't transfer $db$DATE.gz to S3"
+                >&2 echo "couldn't transfer ${db}_${DATE}.gz to S3"
             fi
         else
             >&2 echo "couldn't dump $db"
@@ -52,39 +51,39 @@ if [ "$1" == "backup" ]; then
 # not tested
 elif [ "$1" == "restore" ]; then
     if [ -n "$2" ]; then
-        archives=$2.gz
+        archive=$2
     else
-        archives=`aws s3 ls s3://$S3_BUCKET/$S3_PATH/ | awk '{print $4}' ${EXCLUDE_OPT}`
+        >&2 echo "You must provide an archivename to use restore"
+        exit 64
     fi
 
-    for archive in $archives; do
-        tmp=/tmp/$archive
 
-        echo "restoring $archive"
-        echo "...transferring"
+    tmp=/tmp/$archive
 
-        aws s3 cp s3://$S3_BUCKET/$S3_PATH/$archive $tmp
+    echo "restoring $archive"
+    echo "...transferring"
 
-        if [ $? == 0 ]; then
-            echo "...restoring"
-            # hardcoded - use something like split?
-            db="partkeepr"
+    aws s3 cp s3://$S3_BUCKET/$S3_PATH/$archive $tmp
 
-            if [ -n $MYSQL_PASSWORD ]; then
-                yes | mysqladmin --host=$MYSQL_HOST --port=$MYSQL_PORT --user=$MYSQL_USER --password=$MYSQL_PASSWORD drop $db
+    if [ $? == 0 ]; then
+        echo "...restoring"
+        db="${archive%%_*}"
 
-                mysql --host=$MYSQL_HOST --port=$MYSQL_PORT --user=$MYSQL_USER --password=$MYSQL_PASSWORD -e "CREATE DATABASE $db"
-                gunzip -c $tmp | mysql --host=$MYSQL_HOST --port=$MYSQL_PORT --user=$MYSQL_USER --password=$MYSQL_PASSWORD $db
-            else
-                yes | mysqladmin --host=$MYSQL_HOST --port=$MYSQL_PORT --user=$MYSQL_USER drop $db
+        if [ -n $MYSQL_PASSWORD ]; then
+            yes | mysqladmin --host=$MYSQL_HOST --port=$MYSQL_PORT --user=$MYSQL_USER --password=$MYSQL_PASSWORD drop $db
 
-                mysql --host=$MYSQL_HOST --port=$MYSQL_PORT --user=$MYSQL_USER -e "CREATE DATABASE $db"
-                gunzip -c $tmp | mysql --host=$MYSQL_HOST --port=$MYSQL_PORT --user=$MYSQL_USER $db
-            fi
+            mysql --host=$MYSQL_HOST --port=$MYSQL_PORT --user=$MYSQL_USER --password=$MYSQL_PASSWORD -e "CREATE DATABASE $db"
+            gunzip -c $tmp | mysql --host=$MYSQL_HOST --port=$MYSQL_PORT --user=$MYSQL_USER --password=$MYSQL_PASSWORD $db
         else
-            rm $tmp
+            yes | mysqladmin --host=$MYSQL_HOST --port=$MYSQL_PORT --user=$MYSQL_USER drop $db
+
+            mysql --host=$MYSQL_HOST --port=$MYSQL_PORT --user=$MYSQL_USER -e "CREATE DATABASE $db"
+            gunzip -c $tmp | mysql --host=$MYSQL_HOST --port=$MYSQL_PORT --user=$MYSQL_USER $db
         fi
-    done
+    else
+        rm -rf $tmp
+    fi
+
 else
     >&2 echo "You must provide either backup or restore to run this container"
     exit 64
