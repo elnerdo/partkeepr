@@ -9,7 +9,8 @@ RUN apt-get update && apt-get install -y \
         libldap2-dev
 
 RUN docker-php-ext-configure ldap --with-libdir=lib/x86_64-linux-gnu/ \
-    && docker-php-ext-install mysql json curl gd intl pdo_mysql ldap \
+    && docker-php-ext-configure gd --with-freetype-dir=/usr/include/ --with-jpeg-dir=/usr/include/ \
+    && docker-php-ext-install mysql json curl gd intl pdo_mysql ldap ctype xml \
     && pecl install imagick-3.3.0RC2 \
     && pecl install apcu-4.0.10 \
     && pear channel-discover pear.symfony.com \
@@ -24,7 +25,7 @@ COPY php.ini /usr/local/etc/php/php.ini
 RUN pear config-set php_ini /usr/local/etc/php/php.ini \
     && pecl config-set php_ini /usr/local/etc/php/php.ini
 
-ENV PK_VERSION 0.82
+ENV PK_VERSION 1.0.0
 
 RUN cd /var/www \
     && curl -sL https://github.com/partkeepr/PartKeepr/releases/download/${PK_VERSION}/partkeepr-${PK_VERSION}.tbz2 |tar xj \
